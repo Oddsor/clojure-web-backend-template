@@ -12,7 +12,9 @@
 (defn config [filename]
   (read-config (io/resource filename)))
 
-(defn init-system [sys-config]
+(defn init-system
+  {:malli/schema [:=> [:cat :map] :map]}
+  [sys-config]
   (ig/load-namespaces sys-config)
   (ig/init sys-config))
 
