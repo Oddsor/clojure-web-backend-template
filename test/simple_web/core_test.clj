@@ -1,5 +1,9 @@
 (ns simple-web.core-test
-  (:require [clojure.test :refer [deftest is]]))
+  (:require [clojure.test :refer [deftest is]]
+            [simple-web.core :as core]))
 
-(deftest two-plus-two-equals-4 []
-  (is (= (+ 2 2) 4)))
+(deftest system-correctly-initiates []
+  (is (= "Correct message:\"ok\""
+         (-> (core/init-system {::core/handler {:msg "Correct message:"}})
+             ::core/handler
+             (apply ["ok"])))))
