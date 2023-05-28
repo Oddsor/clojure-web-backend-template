@@ -6,3 +6,11 @@ A simple web server that serves as a launchpad for creating Clojure-based web-ap
 
 While developing, use the `:dev`-alias.
 `sync-deps` can be used to add new dependencies while system is running.
+
+## Building
+
+Build the application's uberjar using the `:build` alias:
+
+```bash
+clj -T:build uber
+```
