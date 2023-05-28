@@ -1,1 +1,3 @@
-{:system {:simple-web.core/handler {:msg "Hello dev! Here are the args"}}}
+{:system {:simple-web.core/handler {}
+          :simple-web.server/server {:port 3000
+                                     :handler #ig/ref :simple-web.core/handler}}}

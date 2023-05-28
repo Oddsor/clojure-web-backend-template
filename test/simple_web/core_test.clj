@@ -5,16 +5,17 @@
 
 (use-fixtures :once utils/instrumentation-fixture)
 
-(deftest system-correctly-initiates []
-  (is (= "Correct message:\"ok\""
+(deftest system-correctly-initiates
+  (is (= {:status 200
+          :body "Hello, world!"}
          (-> (core/init-system {::core/handler {:msg "Correct message:"}})
              ::core/handler
-             (apply ["ok"])))))
+             (apply [{}])))))
 
-(deftest not-correct-input-for-system []
+(deftest not-correct-input-for-system
   (is (thrown? AssertionError
-         (-> (core/init-system nil)
-             ::core/handler
-             (apply ["ok"])))
+               (-> (core/init-system nil)
+                   ::core/handler
+                   (apply ["ok"])))
       "Not passing a valid argument to an instrumented function will
        result in an AssertionError (nb! only instrumented during dev and test)"))
