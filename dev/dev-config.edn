@@ -1,3 +1,3 @@
-{:system {:simple-web.core/handler {}
+{:system {:simple-web.example-app/handler {:dev true}
           :simple-web.server/server {:port 3000
-                                     :handler #ig/ref :simple-web.core/handler}}}
+                                     :handler #ig/ref :simple-web.example-app/handler}}}

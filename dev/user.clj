@@ -16,8 +16,6 @@
 (comment
   ;; Evaluate this to add new dependencies while app is running
   (sync-deps)
-  ;; Run the main method
-  (core/-main 1 2 3)
 
   ; System state
   state/system

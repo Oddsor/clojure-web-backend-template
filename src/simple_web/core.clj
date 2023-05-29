@@ -18,13 +18,6 @@
   (ig/load-namespaces sys-config)
   (ig/init sys-config))
 
-(defn handler [_req]
-  {:status 200
-   :body "Hello, world!"})
-
-(defmethod ig/init-key ::handler [_ {}]
-  (fn [req] (handler req)))
-
-(defn -main [& args]
-  (let [{handle ::handler} (init-system (:system (config "config.edn")))]
-    (println (handle args))))
+(defn -main [& _args]
+  (init-system (:system (config "config.edn")))
+  @(future))
