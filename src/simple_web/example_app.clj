@@ -1,6 +1,7 @@
 (ns simple-web.example-app
   (:require [integrant.core :as ig]
-            [simple-web.base-router :as br]))
+            [simple-web.base-router :as br]
+            [com.brunobonacci.mulog :as u]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
@@ -9,23 +10,29 @@
   [["/" {:get {:parameters {:query root-input-spec}
                :handler
                (fn [req]
-                 (let [hello-name (or (-> req :parameters :query :name) "world")]
-                   {:status 200
-                    :body (format "Hello, %s!" hello-name)}))}
+                 (u/trace
+                  ::root-get [:req req]
+                  (let [hello-name (or (-> req :parameters :query :name) "world")]
+                    {:status 200
+                     :body (format "Hello, %s!" hello-name)})))}
          :post {:parameters {:form root-input-spec
                              :body root-input-spec}
                 :handler (fn [req]
-                           (let [hello-name (or (-> req :parameters :form :name)
-                                                (-> req :parameters :body :name)
-                                                "world")]
-                             {:status 200
-                              :body (format "Hello, %s!" hello-name)}))}}]
+                           (u/trace
+                            ::root-post [:req req]
+                            (let [hello-name (or (-> req :parameters :form :name)
+                                                 (-> req :parameters :body :name)
+                                                 "world")]
+                              {:status 200
+                               :body (format "Hello, %s!" hello-name)})))}}]
    ["/:name"
     {:get {:parameters {:path root-input-spec}
            :handler (fn [req]
-                      (let [hello-name (or (-> req :parameters :path :name) "world")]
-                        {:status 200
-                         :body (format "Hello, %s!" hello-name)}))}}]])
+                      (u/trace
+                       ::root-get-path [:req req]
+                       (let [hello-name (or (-> req :parameters :path :name) "world")]
+                         {:status 200
+                          :body (format "Hello, %s!" hello-name)})))}}]])
 
 (defn dev-handler
   "This sneaky layer of indirection will ensure that while developing, the
