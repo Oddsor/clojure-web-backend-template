@@ -19,7 +19,13 @@
         ; Router data validation
         metosin/reitit-malli {:mvn/version "0.6.0"}
         ; Logging
-        com.brunobonacci/mulog {:mvn/version "0.9.0"}}
+        com.brunobonacci/mulog {:mvn/version "0.9.0"}
+        ; Hiccup syntax to HTML rendering
+        rum/rum {:mvn/version "0.12.10"
+                 ; Exclude frontend dependencies since we only run server-side static rendering
+                 :exclusions [cljsjs/react cljsjs/react-dom]}
+        ; HTML templating
+        selmer/selmer {:mvn/version "1.12.58"}}
  :aliases {:dev {:extra-paths ["dev"]
                  :extra-deps {; Repl-helpers for component framework
                               integrant/repl {:mvn/version "0.3.2"}}}
