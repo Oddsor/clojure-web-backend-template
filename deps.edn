@@ -20,6 +20,9 @@
         metosin/reitit-malli {:mvn/version "0.6.0"}
         ; Logging
         com.brunobonacci/mulog {:mvn/version "0.9.0"}
+        ; Logging - route SLF4J logs to mulog
+        ; Alternative method: https://mbezjak.github.io/posts/routing-slf4j-events-to-mulog/
+        nonseldiha/slf4j-mulog {:mvn/version "0.2.1"}
         ; Hiccup syntax to HTML rendering
         rum/rum {:mvn/version "0.12.10"
                  ; Exclude frontend dependencies since we only run server-side static rendering
