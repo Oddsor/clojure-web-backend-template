@@ -1,7 +1,7 @@
 (ns simple-web.core-test
   (:require [clojure.test :refer [deftest is use-fixtures]]
             [simple-web.core :as core]
-            [simple-web.utils :as utils]))
+            [simple-web.test-utils :as utils]))
 
 (use-fixtures :once utils/instrumentation-fixture)
 

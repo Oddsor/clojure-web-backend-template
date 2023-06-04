@@ -1,8 +1,9 @@
 (ns simple-web.example-app
   (:require [integrant.core :as ig]
-            [simple-web.base-router :as br]
+            [rum.core :as rum]
             [selmer.parser :as selmer]
-            [rum.core :as rum]))
+            [simple-web.auth :as auth]
+            [simple-web.base-router :as br]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
@@ -22,12 +23,20 @@
                                                 "world")]
                              {:status 200
                               :body (format "Hello, %s!" hello-name)}))}}]
-   ["/:name"
+   ["/path/:name"
     {:get {:parameters {:path root-input-spec}
            :handler (fn [req]
                       (let [hello-name (or (-> req :parameters :path :name) "world")]
                         {:status 200
                          :body (format "Hello, %s!" hello-name)}))}}]
+   ["/auth" {:get {:parameters {:query root-input-spec}
+                   ; TODO need to declare this to enable authentication, but also need to throw unauthorized-exceptions in handler to actually block users. How do we prevent unnecessary token validation if we remove the auth-keyword...?
+                   :auth true
+                   :handler
+                   (fn [req]
+                     (println (auth/logged-in-user req))
+                     {:status 200
+                      :body (format "Hello, %s!" (-> (auth/logged-in-user req) :name))})}}]
    ["/selmer/:name"
     {:get {:parameters {:path root-input-spec}
            :handler (fn [req]
@@ -49,10 +58,12 @@
    
    For production, this should not be done as it causes the app to perform
    unnecessary work."
-  [req]
-  ((br/handler router) req))
+  ([req]
+   (dev-handler {} req))
+  ([opts req]
+   ((br/handler router opts) req)))
 
-(defmethod ig/init-key ::handler [_ opts]
-  (if (-> opts :dev)
-    dev-handler
-    (br/handler router)))
+(defmethod ig/init-key ::handler [_ {:keys [dev] :as opts}]
+  (if dev
+    (partial dev-handler opts)
+    (br/handler router opts)))

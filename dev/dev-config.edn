@@ -1,4 +1,9 @@
 {:system {:simple-web.logging/console {}
-          :simple-web.example-app/handler {:dev true}
+          #_#_:simple-web.auth/jwt-backend {:well-known-url "https://fakedings.dev-gcp.nais.io/default/.well-known/openid-configuration"}
+          :simple-web.auth.basic/hardcoded {:username "test" :password "test"}
+          :simple-web.auth/basic-backend {:realm "simpleweb"
+                                          :password-store #ig/ref :simple-web.auth.basic/hardcoded}
+          :simple-web.example-app/handler {:dev true
+                                           :auth-backend #ig/ref :simple-web.auth/basic-backend}
           :simple-web.server/server {:port 3000
                                      :handler #ig/ref :simple-web.example-app/handler}}}

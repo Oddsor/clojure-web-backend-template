@@ -1,7 +1,7 @@
 (ns simple-web.example-app-test
   (:require [clojure.test :refer [deftest is use-fixtures]]
             [simple-web.example-app :as ea]
-            [simple-web.utils :as utils]))
+            [simple-web.test-utils :as utils]))
 
 (use-fixtures :once utils/instrumentation-fixture)
 
@@ -14,7 +14,7 @@
 
   (is (= "Hello, test!"
          (-> (ea/dev-handler {:request-method :get
-                              :uri "/test"})
+                              :uri "/path/test"})
              :body))
       "Path-based parameters")
 

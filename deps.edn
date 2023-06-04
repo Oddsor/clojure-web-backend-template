@@ -28,11 +28,15 @@
                  ; Exclude frontend dependencies since we only run server-side static rendering
                  :exclusions [cljsjs/react cljsjs/react-dom]}
         ; HTML templating
-        selmer/selmer {:mvn/version "1.12.58"}}
+        selmer/selmer {:mvn/version "1.12.58"}
+        ; Authentication
+        buddy/buddy-core {:mvn/version "1.11.418"}
+        buddy/buddy-auth {:mvn/version "3.0.323"}}
  :aliases {:dev {:extra-paths ["dev"]
                  :extra-deps {; Repl-helpers for component framework
                               integrant/repl {:mvn/version "0.3.2"}}}
            :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
                    :ns-default build}
-           :kaocha {:extra-deps {lambdaisland/kaocha {:mvn/version "1.84.1335"}}
+           :kaocha {:extra-deps {lambdaisland/kaocha {:mvn/version "1.84.1335"}
+                                 no.nav.security/mock-oauth2-server {:mvn/version "0.5.8"}}
                     :main-opts ["-m" "kaocha.runner" "--config-file" "test/tests.edn"]}}}
