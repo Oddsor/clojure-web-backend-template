@@ -1,73 +1,82 @@
 (ns simple-web.db
   (:require [honey.sql :as h]
-            [next.jdbc :as jdbc]
-            [ragtime.core :as r]
-            [ragtime.next-jdbc :as rn]
-            [ragtime.strategy :as strategy]))
+            [next.jdbc :as jdbc]))
 
 (def migrations
-  (->> [{:id "create-account-table"
-         :up (h/format {:create-table [:accounts :if-not-exists]
-                        :with-columns
-                        [[:id :uuid [:not nil]]
-                         [:name :text]
-                         [:money :integer]
-                         [[:primary-key :id]]]
-                        :raw "WITHOUT rowid"})
-         :down (h/format {:drop-table :accounts})}
-        {:id "create-user-table"
-         :up (h/format {:create-table [:user :if-not-exists]
-                        :with-columns
-                        [[:id :uuid [:not nil]]
-                         [:username :text :unique]
-                         [:password :text]
-                         [[:primary-key :id]]]
-                        :raw "WITHOUT rowid"})
-         :down (h/format {:drop-table :accounts})}]
-       (map rn/map->SqlMigration)))
+  [(let [table-name :task]
+     {:id "create-task-table"
+      :up {:create-table [table-name]
+           :with-columns
+           [[:id :uuid [:not nil]]
+            [:title :text]
+            [:description :text]
+            [[:primary-key :id]]]
+           :raw "WITHOUT rowid"}
+      :down {:drop-table table-name}})
+   (let [table-name :task-status]
+     {:id "create-taskstate"
+      :up {:create-table [table-name]
+           :with-columns
+           [[:id :uuid [:not nil]]
+            [:task :uuid [:not nil]]
+            [:status :text]
+            [:date :datetime]
+            [[:primary-key :id]]
+            [[:foreign-key :task] [:references :task :id]]]
+           :raw "WITHOUT rowid"}
+      :down {:drop-table table-name}})])
+
+(defn execute! [conn sql]
+  (jdbc/execute! conn (h/format sql)))
+
+(defn apply-migrations [db-spec migrations]
+  (let [conn (jdbc/get-connection db-spec)
+        _ (execute! conn {:create-table [:migrations :if-not-exists]
+                          :with-columns
+                          [[:id :text :unique :primary-key]
+                           [:date :date [:not nil]]]
+                          :raw "WITHOUT rowid"})
+        applied-migrations (execute! conn {:select :*
+                                           :from :migrations
+                                           :order-by :date})
+        applied-ids (->> applied-migrations (map :migrations/id) set)]
+    (println applied-migrations)
+    (doseq [migration migrations
+            :when (not (applied-ids (:id migration)))]
+      (println (format "Applying migration: %s" (:id migration)))
+      (execute! conn (:up migration))
+      (execute! conn {:insert-into :migrations
+                      :values [{:id (:id migration)
+                                :date (java.time.Instant/now)}]}))))
 
 (comment
-  (r/applied-migrations
-   (rn/sql-database {:jdbcUrl "jdbc:sqlite:sample.db"})
-   (r/into-index migrations))
-  (r/migrate-all
-   (rn/sql-database {:jdbcUrl "jdbc:sqlite:sample.db"})
-   (r/into-index migrations)
-   migrations
-   {:strategy strategy/ignore-future})
-  (jdbc/execute! (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"})
-                 (h/format {:select :* :from :ragtime-migrations})))
+  (apply-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} migrations))
+
+(defprotocol TaskDb
+ (get-tasks [this] "Get tasks"))
+
+(defrecord Conny [conn]
+ TaskDb
+ (get-tasks [conn]
+            (execute! conn {:select :*
+                            :from :task})))
+
+(comment
+  (let [db (->Conny (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"}))]
+    (get-tasks db)))
+
+(comment
+  (defmacro safe-call [& args]
+    (println args)
+    (let [[body on-error-xs args] (partition-by #{:on-error} args)
+          on-error (first on-error-xs)]
+      `(try
+         ~@body
+         (catch Exception e#
+           (println ~args)
+           (if (some? ~on-error)
+             (println "Do nothing!")
+             (throw e#))))))
 
 
-(with-open [conn (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"})]
-  #_(jdbc/execute! conn
-                   (h/format {:insert-into :y
-                              :values [{:id (str (random-uuid))
-                                        :name "Bob"
-                                        :money 122}]}))
-  (jdbc/with-transaction [x conn]
-    (jdbc/execute! x (h/format {:create-table [:y :if-not-exists]
-                                :with-columns
-                                [[:id :uuid [:not nil]]
-                                 [:name :text]
-                                 [:money :integer]
-                                 [[:primary-key :id]]]
-                                :raw "WITHOUT rowid"}))
-    (jdbc/execute! x
-                     (h/format {:insert-into :y
-                                :values [{:id (str (random-uuid))
-                                          :name "Bob"
-                                          :money 125}]}))
-    #_(throw (ex-info "Oops" {}))
-    (jdbc/execute! x
-                   (h/format {:select :* :from :y}))))
-
-(defmacro safe-call [body & args]
-  `(try
-     ~body
-     (catch Exception e#
-       (if (contains? args :on-error)
-         (println "Do nothing!")
-         (throw e#)))))
-
-(macroexpand (safe-call (/ 1 0) :on-error))
+  (macroexpand (safe-call (/ 1 0) :on-error)))
