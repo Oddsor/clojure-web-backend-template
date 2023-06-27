@@ -1,0 +1,41 @@
+li.htmx-swapping {
+  opacity: 0;
+  transition: opacity 1s ease-out;
+}
+
+ul {
+  width: 300px;
+  margin: 10px;
+  padding: 0;
+}
+
+li {
+  border: 1px solid grey;
+  box-shadow: 1px 1px grey;
+  padding: 10px;
+  border-radius: 5px;
+  list-style-type: none;
+}
+
+li form {
+  display: inline;
+}
+
+.buttons {
+  text-wrap: nowrap;
+}
+
+.del {
+  width: 30px;
+  height: 24px;
+}
+
+.check {
+  width: 30px;
+  height: 24px;
+}
+
+.tasktitle {
+  display: flex;
+  justify-content: space-between;
+}

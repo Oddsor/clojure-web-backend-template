@@ -12,59 +12,70 @@
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
 
-(defn page [title form]
-  (rum/render-static-markup 
+(defn page [title xs]
+  (rum/render-static-markup
    [:html {:lang "en"}
     [:head
      [:title title]
+     [:link {:rel "stylesheet" :type "text/css" :href "main.css"}]
      [:script {:src "https://unpkg.com/htmx.org@1.9.2"}]
      [:meta {:charset "utf-8"}]]
-    [:body {:hx-trigger "count-updated" 
-            :hx-get "/task-count" 
-            :hx-target "#task-count"} 
-     form]]))
-(defn html [form]
-  (rum/render-static-markup form))
+    [:body {:hx-trigger "count-updated"
+            :hx-get "/task-count"
+            :hx-target "#task-count"}
+     xs]]))
+
+(defn html [xs]
+  (rum/render-static-markup xs))
 
 (def form
-  [:form {:hx-boost "true"
-          :hx-target "closest form"
-          :hx-swap "outerHTML"
-          :hx-push-url "false"
-          :method "POST"
-          :action "/lag-oppgave"}
+  [:form {:action "/lag-oppgave" :method "POST"
+          :hx-boost "true" :hx-swap "outerHTML"
+          :hx-target "closest form" :hx-push-url "false"}
    [:h2 "Ny oppgave"]
    [:label {:for "titl"} "Tittel"]
-   [:input#titl {:type "text" :name "title"}][:br]
+   [:input#titl {:type "text" :name "title"}]
+   [:br]
    [:label {:for "desc"} "Beskrivelse"]
-   [:textarea#desc {:name "description"}][:br]
+   [:textarea#desc {:name "description"}]
+   [:br]
    [:input {:type "submit" :value "Lag oppgave"}]])
 
 (defn task-item [task]
   (let [id (str "todo-" (:id task))
         target-id (str "#" id)]
-    [:li {:id id}
-     (:title task)
-     [:form {:action "/godkjenn-oppgave"
-             :method "POST"}
-      [:input {:name "id" :type "hidden" :value (:id task)}]
-      [:input (cond-> {:name "status" :type "checkbox"
-                       :hx-post "/godkjenn-oppgave" :hx-swap "outerHTML"
-                       :hx-target target-id}
-                (= "DONE" (:status task)) (assoc :checked "checked"))]
-      [:input {:type "submit" :value "Oppdater"}]]
-     [:form {:action "/slett-oppgave" :method "POST"
-             :hx-target target-id :hx-swap "outerHTML"
-             :hx-boost "true" :hx-push-url "false"}
-      [:input {:type "hidden" :name "id" :value (:id task)}]
-      [:input {:type "submit" :value "Slett"}]]]))
+    [:li {:id id :class "task"}
+     [:span.tasktitle
+      [:strong (:title task)]
+      [:span.buttons
+       [:form {:action "/godkjenn-oppgave" :method "POST"
+               :hx-boost "true" :hx-push-url "false"
+               :hx-target target-id :hx-swap "outerHTML"}
+        [:input {:name "id" :type "hidden" :value (:id task)}]
+        [:input {:name "status" :type "hidden" :value (if (= "DONE" (:status task)) "NOT_DONE" "DONE")}]
+        [:input.check {:type "submit" :value (if (= "DONE" (:status task))
+                                               "✔️" " ")}]]
+       [:form {:action "/slett-oppgave" :method "POST"
+               :hx-target target-id :hx-swap "outerHTML swap:1s"
+               :hx-boost "true" :hx-push-url "false"}
+        [:input {:type "hidden" :name "id" :value (:id task)}]
+        [:input.del {:type "submit" :value "❌"}]]]]
+     [:span (:description task)]]))
 
 (defn task-list [tasks]
-  [:ul#task-list
-   (map task-item tasks)])
+  [:<> (map task-item tasks)])
+
+(defn todo-body [tasks]
+  [:body
+   [:h1 "Todlido! (" [:span#task-count (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
+   [:textarea]
+   [:article {:hx-trigger "tasklist-updated" :hx-get "/" :hx-target "#task-list"}
+    form
+    [:ul#task-list (task-list tasks)]]])
 
 (defn is-hx-request? [req]
   (-> req :headers (get "hx-request") (= "true")))
+
 (defn get-tasks [db]
   (map #(update-keys % (comp keyword name)) (db/get-tasks db)))
 
@@ -78,16 +89,7 @@
                      {:status 200
                       :body (html (task-list tasks))}
                      {:status 200
-                      :body (page "Todlido"
-                                  [:body
-                                   [:h1 "Todlido! (" [:span#task-count (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
-                                   [:textarea]
-                                   [:article {:hx-trigger "tasklist-updated"
-                                              :hx-get "/" 
-                                              :hx-target "#task-list"
-                                              :hx-swap "outerHTML"}
-                                    form
-                                    (task-list tasks)]])})))}}]
+                      :body (page "Todlido" (todo-body tasks))})))}}]
    ["/lag-oppgave" {:post {:parameters {:form [:map
                                                [:title :string]
                                                [:description :string]]}
@@ -110,7 +112,7 @@
                                   (let [{:keys [status id]} (-> req :parameters :form)
                                         db (-> req :opts :db)]
                                     (db/update-task db {:id id
-                                                        :status (if (= "on" status)
+                                                        :status (if (= "DONE" status)
                                                                   "DONE"
                                                                   "NOT_DONE")})
                                     (let [tasks (get-tasks db)
