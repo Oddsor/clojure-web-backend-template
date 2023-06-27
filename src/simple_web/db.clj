@@ -10,19 +10,9 @@
            [[:id :uuid [:not nil]]
             [:title :text]
             [:description :text]
-            [[:primary-key :id]]]
-           :raw "WITHOUT rowid"}
-      :down {:drop-table table-name}})
-   (let [table-name :task-status]
-     {:id "create-taskstate"
-      :up {:create-table [table-name]
-           :with-columns
-           [[:id :uuid [:not nil]]
-            [:task :uuid [:not nil]]
-            [:status :text]
             [:date :datetime]
-            [[:primary-key :id]]
-            [[:foreign-key :task] [:references :task :id]]]
+            [:status :text]
+            [[:primary-key :id]]]
            :raw "WITHOUT rowid"}
       :down {:drop-table table-name}})])
 
@@ -53,17 +43,39 @@
   (apply-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} migrations))
 
 (defprotocol TaskDb
- (get-tasks [this] "Get tasks"))
+  (get-tasks [this] "Get tasks")
+  (delete-task [this id] "Delete task by id")
+  (update-task [this task] "Update task")
+  (create-task [this title description] "Create task"))
 
 (defrecord Conny [conn]
- TaskDb
- (get-tasks [conn]
-            (execute! conn {:select :*
-                            :from :task})))
+  TaskDb
+  (get-tasks [this]
+    (execute! conn {:select :*
+                    :from :task}))
+  (delete-task [this id]
+    (execute! conn {:delete-from :task
+                    :where [:= :id id]}))
+  (update-task [this task]
+    (let [id (:id task)
+          task-fields (select-keys task [:title :description :status])]
+      (assert (some? id) "Task must have id!")
+      (execute! conn {:update :task
+                      :set task-fields
+                      :where [:= :id id]})))
+  (create-task [this title description]
+    (execute! conn {:insert-into :task
+                    :values [{:id (random-uuid)
+                              :title title
+                              :description description
+                              :status "NOT_DONE"
+                              :date (java.time.Instant/now)}]})))
 
 (comment
   (let [db (->Conny (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"}))]
-    (get-tasks db)))
+    (get-tasks db)
+    #_(delete-task db "288a884a-99b1-4648-bdbf-0c19c33473d8") 
+    (create-task db "Hei!" "Dette er en oppgave som må gjøres")))
 
 (comment
   (defmacro safe-call [& args]

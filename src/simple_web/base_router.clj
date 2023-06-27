@@ -10,6 +10,14 @@
             [simple-web.auth :as auth]
             [simple-web.logging :as logging]))
 
+(def expose-opts-middleware
+  {:name ::opts
+   :compile (fn [_ opts]
+              (when-let [opts (-> opts :data :opts)]
+                (fn [handler]
+                  (fn [req]
+                    (handler (assoc req :opts opts))))))})
+
 (defn handler
   {:malli/schema [:function
                   [:=> [:cat :any] :any]
@@ -39,6 +47,7 @@
                                                   :body (str "Unknown error occurred: " (ex-message e))})))
                          ; Authentication and authorization (inactive if no backend is supplied in options)
                           auth/auth-middleware
+                          expose-opts-middleware
                          ; This ensures query params are handled 
                           rp/parameters-middleware
                          ; Format data on the way in and out

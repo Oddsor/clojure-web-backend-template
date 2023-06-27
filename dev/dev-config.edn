@@ -3,7 +3,7 @@
           :simple-web.auth.basic/hardcoded {:username "test" :password "test"}
           :simple-web.auth/basic-backend {:realm "simpleweb"
                                           :password-store #ig/ref :simple-web.auth.basic/hardcoded}
-          :simple-web.example-app/handler {:dev true
-                                           :auth-backend #ig/ref :simple-web.auth/basic-backend}
+          :simple-web.todo-app/handler {:dev true
+                                        #_#_:auth-backend #ig/ref :simple-web.auth/basic-backend}
           :simple-web.server/server {:port 3000
-                                     :handler #ig/ref :simple-web.example-app/handler}}}
+                                     :handler #ig/ref :simple-web.todo-app/handler}}}
