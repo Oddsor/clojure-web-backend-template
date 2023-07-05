@@ -12,6 +12,9 @@
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
 
+(defn hidden-id-input [id]
+  [:input {:name "id" :type "hidden" :value id}])
+
 (defn page [title xs]
   (rum/render-static-markup
    [:html {:lang "en"}
@@ -20,62 +23,77 @@
      [:link {:rel "stylesheet" :type "text/css" :href "main.css"}]
      [:script {:src "https://unpkg.com/htmx.org@1.9.2"}]
      [:meta {:charset "utf-8"}]]
-    [:body {:hx-trigger "count-updated"
-            :hx-get "/task-count"
-            :hx-target "#task-count"}
+    [:body {:hx-trigger "nytt-antall"
+            :hx-get "/antall-oppgaver"
+            :hx-target "#oppgave-teller"}
      xs]]))
 
 (defn html [xs]
   (rum/render-static-markup xs))
 
-(def form
+(def lag-oppgave-skjema
   [:form {:action "/lag-oppgave" :method "POST"
           :hx-boost "true" :hx-swap "outerHTML"
           :hx-target "closest form" :hx-push-url "false"}
-   [:h2 "Ny oppgave"]
-   [:label {:for "titl"} "Tittel"]
-   [:input#titl {:type "text" :name "title"}]
-   [:br]
-   [:label {:for "desc"} "Beskrivelse"]
-   [:textarea#desc {:name "description"}]
-   [:br]
+   [:input {:type "text" :name "title" :placeholder "Legg til oppgave..."}]
    [:input {:type "submit" :value "Lag oppgave"}]])
 
-(defn task-item [task]
-  (let [id (str "todo-" (:id task))
-        target-id (str "#" id)]
-    [:li {:id id :class "task"}
-     [:span.tasktitle
-      [:strong (:title task)]
+(defn task-item
+  ([{:keys [id title status] :as task} edit-task?]
+   (let [li-id (str "todo-" id)
+         target-id (str "#" li-id)
+         can-edit? (not= "uredigerbar" title)]
+     [:li {:id li-id :class "task"}
+      (hidden-id-input id)
+      (if edit-task?
+        [:form {:hx-boost "true" :hx-push-url "false" :hx-target target-id :hx-swap "outerHTML" :action (str "/rediger-oppgave/" id) :method "POST"}
+         [:input {:type "text" :name "title" :value title}]]
+        [:strong title])
       [:span.buttons
-       [:form {:action "/godkjenn-oppgave" :method "POST"
-               :hx-boost "true" :hx-push-url "false"
-               :hx-target target-id :hx-swap "outerHTML"}
-        [:input {:name "id" :type "hidden" :value (:id task)}]
-        [:input {:name "status" :type "hidden" :value (if (= "DONE" (:status task)) "NOT_DONE" "DONE")}]
-        [:input.check {:type "submit" :value (if (= "DONE" (:status task))
-                                               "✔️" " ")}]]
-       [:form {:action "/slett-oppgave" :method "POST"
-               :hx-target target-id :hx-swap "outerHTML swap:1s"
-               :hx-boost "true" :hx-push-url "false"}
-        [:input {:type "hidden" :name "id" :value (:id task)}]
-        [:input.del {:type "submit" :value "❌"}]]]]
-     [:span (:description task)]]))
+       (when can-edit?
+         (if edit-task?
+           [:a {:href "#" :hx-get (str "/hent-oppgave/" id) :hx-target target-id :hx-swap "outerHTML"} "↩️"]
+           [:a {:href "#" :hx-get (str "/hent-oppgave/" id "?rediger=true") :hx-target target-id :hx-swap "outerHTML"} "📝"]))
+       [:input (cond-> {:type "checkbox"
+                        :hx-post "/godkjenn-oppgave"
+                        :hx-include (str target-id " > [name='id']")
+                        :name "status"
+                        :hx-target "closest li" #_target-id
+                        :hx-swap "outerHTML"}
+                 (= "DONE" status) (assoc :checked "checked"))]
+       #_[:form {:action "/godkjenn-oppgave" :method "POST"
+                 :hx-boost "true" :hx-push-url "false"
+                 :hx-target target-id :hx-swap "outerHTML"}
+          (hidden-id-input id)
+          [:input {:name "status" :type "hidden" :value ({"DONE" "NOT_DONE"} status "DONE")}]
+          [:input.check {:type "submit" :value (if (= "DONE" status) "✔️" " ")}]]
+       [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" #_target-id :hx-swap "outerHTML swap:0.5s"} "❌"]
+       #_[:form {:action "/slett-oppgave" :method "POST"
+                 :hx-target target-id :hx-swap "outerHTML swap:0.5s"
+                 :hx-boost "true" :hx-push-url "false"}
+          (hidden-id-input id)
+          [:input.del {:type "submit" :value "❌"}]]]]))
+  ([task] (task-item task false)))
 
-(defn task-list [tasks]
-  [:<> (map task-item tasks)])
+(defn task-list [tasks] [:<> (map task-item tasks)])
 
 (defn todo-body [tasks]
   [:body
-   [:h1 "Todlido! (" [:span#task-count (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
-   [:textarea]
-   [:article {:hx-trigger "tasklist-updated" :hx-get "/" :hx-target "#task-list"}
-    form
-    [:ul#task-list (task-list tasks)]]])
+   [:h1 "Todlido! (" [:span#oppgave-teller (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
+   [:div.ballcontainer [:div.ball]]
+   [:p "Laget med " [:a {:href "https://htmx.org"} "htmx.org"]]
+   #_[:div {:hx-trigger "oppgaveliste-oppdatert" :hx-get "/" :hx-target "#oppgaveliste"}]
+   lag-oppgave-skjema
+   [:ul#oppgaveliste (task-list tasks)]])
 
 (defn is-hx-request? [req]
   (-> req :headers (get "hx-request") (= "true")))
 
+(defn get-task [db id]
+  (->> (db/get-tasks db)
+       (map #(update-keys % (comp keyword name)))
+       (filter #(= id (:id %)))
+       first))
 (defn get-tasks [db]
   (map #(update-keys % (comp keyword name)) (db/get-tasks db)))
 
@@ -87,23 +105,51 @@
                        tasks (->> (get-tasks db) (sort-by :date) reverse)]
                    (if (is-hx-request? req)
                      {:status 200
+                      :headers {"Content-Type" "text/html; charset=utf-8"}
                       :body (html (task-list tasks))}
                      {:status 200
+                      :headers {"Content-Type" "text/html; charset=utf-8"}
                       :body (page "Todlido" (todo-body tasks))})))}}]
-   ["/lag-oppgave" {:post {:parameters {:form [:map
-                                               [:title :string]
-                                               [:description :string]]}
+   ["/lag-oppgave" {:post {:parameters {:form [:map [:title :string]]}
                            :handler
                            (fn [req]
                              (let [db (-> req :opts :db)
-                                   {:keys [title description]} (-> req :parameters :form)]
-                               (db/create-task db title description)
+                                   {:keys [title]} (-> req :parameters :form)
+                                   new-id (random-uuid)]
+                               (db/create-task db new-id title "")
                                (if (is-hx-request? req)
                                  {:status 200
-                                  :headers {"Hx-Trigger" (json/write-value-as-string {"count-updated" "" "tasklist-updated" ""})}
-                                  :body (html form)}
+                                  :headers {"Hx-Trigger" "nytt-antall"
+                                            "Content-Type" "text/html; charset=utf-8"}
+                                  :body (html [:<>
+                                               [:div {:hx-swap-oob "afterbegin:#oppgaveliste"}
+                                                (task-item (get-task db (str new-id)))]
+                                               lag-oppgave-skjema])}
                                  {:status 302
                                   :headers {"location" "/"}})))}}]
+   ["/hent-oppgave/:id" {:get {:parameters {:path [:map [:id :string]]
+                                            :query [:map [:rediger {:optional true} :string]]}
+                               :handler
+                               (fn [req]
+                                 (mu/log ::hent-oppgave :req req)
+                                 (let [db (-> req :opts :db)
+                                       id (-> req :parameters :path :id)
+                                       rediger? (-> req :parameters :query :rediger)]
+                                   {:status 200
+                                    :headers {"Content-Type" "text/html; charset=utf-8"}
+                                    :body (html (task-item (get-task db id) (boolean rediger?)))}))}}]
+   ["/rediger-oppgave/:id" {:post {:parameters {:path [:map [:id :string]]
+                                                :form [:map [:title :string]]}
+                                   :handler
+                                   (fn [req]
+                                     (let [id (-> req :parameters :path :id)
+                                           title (-> req :parameters :form :title)
+                                           db (-> req :opts :db)]
+                                       (db/update-task db {:id id
+                                                           :title title})
+                                       {:status 200
+                                        :headers {"Content-Type" "text/html; charset=utf-8"}
+                                        :body (html (task-item (get-task db id)))}))}}]
    ["/godkjenn-oppgave" {:post {:parameters {:form [:map
                                                     [:id :string]
                                                     [:status {:optional true} :string]]}
@@ -112,17 +158,16 @@
                                   (let [{:keys [status id]} (-> req :parameters :form)
                                         db (-> req :opts :db)]
                                     (db/update-task db {:id id
-                                                        :status (if (= "DONE" status)
+                                                        :status (if (or (= "DONE" status) (= "on" status))
                                                                   "DONE"
                                                                   "NOT_DONE")})
-                                    (let [tasks (get-tasks db)
-                                          task (first (filter #(= id (:id %)) tasks))]
-                                      (if (is-hx-request? req)
-                                        {:status 200
-                                         :headers {"Hx-Trigger" "count-updated"}
-                                         :body (html (task-item task))}
-                                        {:status 302
-                                         :headers {"location" "/"}}))))}}]
+                                    (if (is-hx-request? req)
+                                      {:status 200
+                                       :headers {"Hx-Trigger" "nytt-antall"
+                                                 "Content-Type" "text/html; charset=utf-8"}
+                                       :body (html (task-item (get-task db id)))}
+                                      {:status 302
+                                       :headers {"location" "/"}})))}}]
    ["/slett-oppgave" {:post {:parameters {:form [:map
                                                  [:id :string]]}
                              :handler
@@ -132,15 +177,17 @@
                                  (db/delete-task db task-id)
                                  (if (is-hx-request? req)
                                    {:status 200
-                                    :headers {"Hx-Trigger" "count-updated"}
+                                    :headers {"Hx-Trigger" "nytt-antall"
+                                              "Content-Type" "text/html; charset=utf-8"}
                                     :body ""}
                                    {:status 302
                                     :headers {"location" "/"}})))}}]
-   ["/task-count" {:get (fn [req]
-                          (let [db (-> req :opts :db)
-                                tasks (get-tasks db)]
-                            {:status 200
-                             :body (str (count (filter #(= "NOT_DONE" (:status %)) tasks)))}))}]])
+   ["/antall-oppgaver" {:get (fn [req]
+                               (let [db (-> req :opts :db)
+                                     tasks (get-tasks db)]
+                                 {:status 200
+                                  :headers {"Content-Type" "text/html; charset=utf-8"}
+                                  :body (str (count (filter #(= "NOT_DONE" (:status %)) tasks)))}))}]])
 
 (defn dev-handler
   "This sneaky layer of indirection will ensure that while developing, the
