@@ -1,7 +1,7 @@
-(ns simple-web.todo-jdbc
+(ns todo-app.jdbc
   (:require [honey.sql :as h]
             [next.jdbc :as jdbc]
-            [simple-web.todo-db :as todo-db]) 
+            [todo-app.db :as todo-db]) 
   (:import [java.time Instant]))
 
 (def migrations
@@ -74,6 +74,6 @@
 
 (comment
   (let [db (make-jdbc-connection "jdbc:sqlite:sample.db")]
-    (println (todo-app/get-tasks db))
+    (println (todo-db/get-tasks db))
     #_(delete-task db "288a884a-99b1-4648-bdbf-0c19c33473d8")
-    (todo-app/create-task db "Hei!" "Dette er en oppgave som må gjøres")))
+    (todo-db/create-task db "Hei!" "Dette er en oppgave som må gjøres")))

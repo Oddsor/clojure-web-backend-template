@@ -1,4 +1,4 @@
-(ns simple-web.todo-db)
+(ns todo-app.db)
 
 (defprotocol TaskDb
   (get-tasks [this] "Get tasks")

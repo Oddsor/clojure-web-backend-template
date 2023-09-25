@@ -1,8 +1,8 @@
-(ns simple-web.todo-app
+(ns todo-app.core
   (:require [com.brunobonacci.mulog :as mu]
             [rum.core :as rum]
             [simple-web.base-router :as br]
-            [simple-web.todo-db :as db]))
+            [todo-app.db :as db]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])

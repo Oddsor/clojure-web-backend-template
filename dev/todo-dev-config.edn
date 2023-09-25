@@ -5,4 +5,6 @@
                                {:port 3000
                                 :join? false})
                        :stop (.stop this)}
-              :handler {:start (simple-web.example-app/handler {:dev true})}}}
+              :db {:start (todo-app.jdbc/make-jdbc-connection "jdbc:sqlite:sample.db")}
+              :handler {:start (todo-app.core/handler {:dev true
+                                                       :db (clip/ref :db)})}}}
