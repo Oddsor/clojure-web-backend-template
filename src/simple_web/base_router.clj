@@ -4,6 +4,7 @@
             [reitit.coercion.malli :as rm]
             [reitit.ring :as r]
             [reitit.ring.coercion :as rc]
+            [reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.exception :as re]
             [reitit.ring.middleware.muuntaja :as mm]
             [reitit.ring.middleware.parameters :as rp]
@@ -27,38 +28,39 @@
    (r/ring-handler
     (r/router
      router
-     {:data {:muuntaja (m/create
+     (cond-> {:data {:muuntaja (m/create
                        ; Handling form parameters
-                        (let [form-format mf/format]
-                          (assoc-in m/default-options
-                                    [:formats (:name form-format)]
-                                    form-format)))
-             :opts opts
-             :coercion rm/coercion
+                                (let [form-format mf/format]
+                                  (assoc-in m/default-options
+                                            [:formats (:name form-format)]
+                                            form-format)))
+                     :opts opts
+                     :coercion rm/coercion
             ; Order of middleware is important.
-             :middleware [; This adds exception handling.
+                     :middleware [; This adds exception handling.
                          ; Default handler returns a clojure-map which won't be correctly formatted,
                          ; so we override that one. (muuntaja would handle maps, but can't be placed above the
                          ; exception middleware because otherwise formatting errors won't be caught!)
-                          (re/create-exception-middleware
-                           (assoc re/default-handlers
-                                  ::re/default (fn [^Exception e _]
-                                                 {:status 500
-                                                  :body (str "Unknown error occurred: " (ex-message e))})))
+                                  (re/create-exception-middleware
+                                   (assoc re/default-handlers
+                                          ::re/default (fn [^Exception e _]
+                                                         {:status 500
+                                                          :body (str "Unknown error occurred: " (ex-message e))})))
                          ; Authentication and authorization (inactive if no backend is supplied in options)
-                          auth/auth-middleware
-                          expose-opts-middleware
+                                  auth/auth-middleware
+                                  expose-opts-middleware
                          ; This ensures query params are handled 
-                          rp/parameters-middleware
+                                  rp/parameters-middleware
                          ; Format data on the way in and out
-                          mm/format-middleware
+                                  mm/format-middleware
                          ; TODO maybe tracing should not log exceptions here? If so, place at top
                          ; Logging (place BELOW exception handling, or trace will assume the call was a success)
-                          logging/trace-middleware
+                                  logging/trace-middleware
                          ; Data validation middleware
-                          rc/coerce-exceptions-middleware
-                          rc/coerce-request-middleware
-                          rc/coerce-response-middleware]}})
+                                  rc/coerce-exceptions-middleware
+                                  rc/coerce-request-middleware
+                                  rc/coerce-response-middleware]}}
+       (:dev opts) (assoc :reitit.middleware/transform dev/print-request-diffs)))
     (r/routes
      (r/redirect-trailing-slash-handler {:method :strip})
      (r/create-resource-handler {:path "/"})
