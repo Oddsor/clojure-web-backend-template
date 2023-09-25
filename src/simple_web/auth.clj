@@ -1,19 +1,17 @@
 (ns simple-web.auth
   (:require [buddy.auth :as ba]
-            [buddy.auth.backends.httpbasic :as basic]
             [buddy.auth.backends.token :as bt]
             [buddy.auth.middleware :as mw]
             [buddy.core.keys :as bk]
             [buddy.sign.jws :as jws]
             [buddy.sign.jwt :as jwt]
             [hato.client :as hato]
-            [integrant.core :as ig]
-            [jsonista.core :as json] 
+            [charred.api :as c]
             [ring.util.response :as response]
             [simple-web.utils :as utils]))
 
 (defn- json [json-str]
-  (json/read-value json-str (json/object-mapper {:decode-key-fn true})))
+  (c/read-json json-str :key-fn keyword))
 
 (defn- get-jwk-keys [well-known-url]
   (let [well-known-data (-> (hato/get well-known-url) :body json)
@@ -51,10 +49,7 @@
   (revoke! [this username] "Revoke access")
   (has-access? [this username password] "Check if user has access"))
 
-(defmethod ig/init-key ::jwt-backend [_ {:keys [well-known-url]}]
-  (jwt-backend well-known-url))
-
-(defmethod ig/init-key ::basic-backend [_ {:keys [realm password-store] :as opts}]
+#_(defmethod ig/init-key ::basic-backend [_ {:keys [realm password-store] :as opts}]
   (utils/assert-schema [:map
                         [:realm {:optional true} :string]
                         [:password-store [:fn {:error/message "must implement the BasicAuthStore protocol"} (partial satisfies? BasicAuthStore)]]]

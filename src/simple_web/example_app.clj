@@ -1,6 +1,5 @@
 (ns simple-web.example-app
-  (:require [integrant.core :as ig]
-            [rum.core :as rum]
+  (:require [rum.core :as rum]
             [selmer.parser :as selmer]
             [simple-web.auth :as auth]
             [simple-web.base-router :as br]))
@@ -52,18 +51,11 @@
                          :body (rum/render-static-markup
                                 [:h1 "Hello " hello-name "!!"])}))}}]])
 
-(defn dev-handler
-  "This sneaky layer of indirection will ensure that while developing, the
-   router will correctly reload when loading the namespace.
-   
-   For production, this should not be done as it causes the app to perform
-   unnecessary work."
-  ([req]
-   (dev-handler {} req))
-  ([opts req]
-   ((br/handler router opts) req)))
-
-(defmethod ig/init-key ::handler [_ {:keys [dev] :as opts}]
+(defn handler [{:keys [dev] :as opts}]
   (if dev
-    (partial dev-handler opts)
-    (br/handler router opts)))
+    ;;"This sneaky layer of indirection will ensure that while developing, the
+    ;; router will correctly reload when loading the namespace.
+    ;; For production, this should not be done as it causes the app to perform
+    ;; unnecessary work."
+    (fn [req] ((br/base-handler router opts) req))
+    (br/base-handler router opts)))

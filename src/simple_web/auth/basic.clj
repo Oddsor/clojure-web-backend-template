@@ -1,9 +1,8 @@
 (ns simple-web.auth.basic
-  (:require [integrant.core :as ig]
-            [simple-web.auth :as auth]
+  (:require [simple-web.auth :as auth]
             [simple-web.utils :as utils]))
 
-(defmethod ig/init-key ::hardcoded [_ {:keys [username password] :as opts}]
+(defn auth-store [{:keys [username password] :as opts}]
   (utils/assert-schema [:map
                         [:username :string]
                         [:password :string]]

@@ -1,9 +1,10 @@
-{:system {:simple-web.logging/console {}
-          #_#_:simple-web.auth/jwt-backend {:well-known-url "https://fakedings.dev-gcp.nais.io/default/.well-known/openid-configuration"}
-          :simple-web.auth.basic/hardcoded {:username "test" :password "test"}
-          :simple-web.auth/basic-backend {:realm "simpleweb"
-                                          :password-store #ig/ref :simple-web.auth.basic/hardcoded}
-          :simple-web.todo-app/handler {:dev true
-                                        #_#_:auth-backend #ig/ref :simple-web.auth/basic-backend}
-          :simple-web.server/server {:port 3000
-                                     :handler #ig/ref :simple-web.todo-app/handler}}}
+{:components {:logging {:start (com.brunobonacci.mulog/start-publisher! {:type :console})
+                        :stop (this)}
+              :server {:start (ring.adapter.jetty/run-jetty
+                               (clip/ref :handler)
+                               {:port 3000
+                                :join? false})
+                       :stop (.stop this)}
+              :db {:start (simple-web.todo-jdbc/make-jdbc-connection "jdbc:sqlite:sample.db")}
+              :handler {:start (simple-web.todo-app/handler {:dev true
+                                                             :db (clip/ref :db)})}}}

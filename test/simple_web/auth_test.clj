@@ -1,7 +1,7 @@
 (ns simple-web.auth-test
   (:require [clojure.test :refer [deftest is use-fixtures]]
             [hato.client :as hato]
-            [integrant.core :as ig])
+            [juxt.clip.core :as clip])
   (:import [no.nav.security.mock.oauth2 MockOAuth2Server OAuth2Config]
            [no.nav.security.mock.oauth2.http Route]
            [no.nav.security.mock.oauth2.token DefaultOAuth2TokenCallback]))
@@ -19,11 +19,13 @@
 (defn get-well-known-url []
   (str (.. @server-ref (wellKnownUrl "default"))))
 
-(def conf {:simple-web.auth/jwt-backend {:well-known-url nil}
-           :simple-web.example-app/handler {:auth-backend (ig/ref :simple-web.auth/jwt-backend)}
-           :simple-web.server/server {:port 3210
-                                      :handler (ig/ref :simple-web.example-app/handler)}})
-(ig/load-namespaces conf)
+(def conf {:components {:jwt {:start nil}
+                        :handler {:start (list 'simple-web.example-app/handler {:auth-backend (clip/ref :jwt)})}
+                        :server {:start (list 'ring.adapter.jetty/run-jetty
+                                              (clip/ref :handler)
+                                              {:port 3210
+                                               :join? false})
+                                 :stop '(.stop this)}}})
 
 (defn with-server
   "Start web server and oauth mock server.
@@ -32,12 +34,14 @@
   [f]
   (with-oauth-mock-server
    (fn []
-     (let [system (ig/init (assoc-in conf
-                                     [:simple-web.auth/jwt-backend :well-known-url] (get-well-known-url)))]
+     (let [conf (assoc-in conf
+                          [:components :jwt :start] (list 'simple-web.auth/jwt-backend (get-well-known-url)))
+           _ (clip/require conf)
+           system (clip/start conf)]
        (try
          (f)
          (finally
-           (ig/halt! system)))))))
+           (clip/stop conf system)))))))
 
 (defn get-access-token
   "Abstract away Java-specifics for getting an access token from the mock server"

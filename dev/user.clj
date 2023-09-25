@@ -1,25 +1,21 @@
 (ns user
   (:require [clojure.repl.deps :refer [sync-deps]]
-            [integrant.core :as ig]
-            [integrant.repl :as ir]
-            [integrant.repl.state :as state]
+            [flow-storm.api :as fs-api]
             [malli.dev :as md]
-            [simple-web.core :as core]))
+            [simple-web.core :as core]
+            [juxt.clip.core :as clip]))
 
 ; Instrument and use function schemas while developing
 (md/start!)
 
 (def config (core/config "dev-config.edn"))
-(ig/load-namespaces (:system config))
-(ir/set-prep! #(ig/prep (:system config)))
 
 (comment
   ;; Evaluate this to add new dependencies while app is running
   (sync-deps)
 
-  ; System state
-  state/system
-  ; (Re)start system
-  (ir/reset)
-  ; Stop system
-  (ir/halt))
+  (fs-api/local-connect)
+
+  (clip/require config)
+  (def sys (clip/start config))
+  (clip/stop config sys))

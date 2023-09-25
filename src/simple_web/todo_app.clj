@@ -1,13 +1,8 @@
 (ns simple-web.todo-app
-  (:require [integrant.core :as ig]
+  (:require [com.brunobonacci.mulog :as mu]
             [rum.core :as rum]
-            [selmer.parser :as selmer]
-            [simple-web.auth :as auth]
             [simple-web.base-router :as br]
-            [simple-web.db :as db]
-            [com.brunobonacci.mulog :as mu]
-            [next.jdbc :as jdbc]
-            [jsonista.core :as json]))
+            [simple-web.todo-db :as db]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
@@ -89,12 +84,12 @@
 (defn is-hx-request? [req]
   (-> req :headers (get "hx-request") (= "true")))
 
-(defn get-task [db id]
+(defn get-task! [db id]
   (->> (db/get-tasks db)
        (map #(update-keys % (comp keyword name)))
        (filter #(= id (:id %)))
        first))
-(defn get-tasks [db]
+(defn get-tasks! [db]
   (map #(update-keys % (comp keyword name)) (db/get-tasks db)))
 
 (def router
@@ -102,7 +97,7 @@
                :handler
                (fn [req]
                  (let [db (-> req :opts :db)
-                       tasks (->> (get-tasks db) (sort-by :date) reverse)]
+                       tasks (->> (get-tasks! db) (sort-by :date) reverse)]
                    (if (is-hx-request? req)
                      {:status 200
                       :headers {"Content-Type" "text/html; charset=utf-8"}
@@ -115,15 +110,14 @@
                            (fn [req]
                              (let [db (-> req :opts :db)
                                    {:keys [title]} (-> req :parameters :form)
-                                   new-id (random-uuid)]
-                               (db/create-task db new-id title "")
+                                   new-id (db/create-task db title "")]
                                (if (is-hx-request? req)
                                  {:status 200
                                   :headers {"Hx-Trigger" "nytt-antall"
                                             "Content-Type" "text/html; charset=utf-8"}
                                   :body (html [:<>
                                                [:div {:hx-swap-oob "afterbegin:#oppgaveliste"}
-                                                (task-item (get-task db (str new-id)))]
+                                                (task-item (get-task! db (str new-id)))]
                                                lag-oppgave-skjema])}
                                  {:status 302
                                   :headers {"location" "/"}})))}}]
@@ -137,7 +131,7 @@
                                        rediger? (-> req :parameters :query :rediger)]
                                    {:status 200
                                     :headers {"Content-Type" "text/html; charset=utf-8"}
-                                    :body (html (task-item (get-task db id) (boolean rediger?)))}))}}]
+                                    :body (html (task-item (get-task! db id) (boolean rediger?)))}))}}]
    ["/rediger-oppgave/:id" {:post {:parameters {:path [:map [:id :string]]
                                                 :form [:map [:title :string]]}
                                    :handler
@@ -146,10 +140,10 @@
                                            title (-> req :parameters :form :title)
                                            db (-> req :opts :db)]
                                        (db/update-task db {:id id
-                                                           :title title})
+                                                        :title title})
                                        {:status 200
                                         :headers {"Content-Type" "text/html; charset=utf-8"}
-                                        :body (html (task-item (get-task db id)))}))}}]
+                                        :body (html (task-item (get-task! db id)))}))}}]
    ["/godkjenn-oppgave" {:post {:parameters {:form [:map
                                                     [:id :string]
                                                     [:status {:optional true} :string]]}
@@ -158,14 +152,14 @@
                                   (let [{:keys [status id]} (-> req :parameters :form)
                                         db (-> req :opts :db)]
                                     (db/update-task db {:id id
-                                                        :status (if (or (= "DONE" status) (= "on" status))
+                                                        :status (if (= "on" status)
                                                                   "DONE"
                                                                   "NOT_DONE")})
                                     (if (is-hx-request? req)
                                       {:status 200
                                        :headers {"Hx-Trigger" "nytt-antall"
                                                  "Content-Type" "text/html; charset=utf-8"}
-                                       :body (html (task-item (get-task db id)))}
+                                       :body (html (task-item (get-task! db id)))}
                                       {:status 302
                                        :headers {"location" "/"}})))}}]
    ["/slett-oppgave" {:post {:parameters {:form [:map
@@ -184,22 +178,16 @@
                                     :headers {"location" "/"}})))}}]
    ["/antall-oppgaver" {:get (fn [req]
                                (let [db (-> req :opts :db)
-                                     tasks (get-tasks db)]
+                                     tasks (get-tasks! db)]
                                  {:status 200
                                   :headers {"Content-Type" "text/html; charset=utf-8"}
                                   :body (str (count (filter #(= "NOT_DONE" (:status %)) tasks)))}))}]])
 
-(defn dev-handler
-  "This sneaky layer of indirection will ensure that while developing, the
-   router will correctly reload when loading the namespace.
-   
-   For production, this should not be done as it causes the app to perform
-   unnecessary work."
-  [opts req]
-  (let [db (db/->Conny (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"}))]
-    ((br/handler router (assoc opts :db db)) req)))
-
-(defmethod ig/init-key ::handler [_ {:keys [dev] :as opts}]
-  (if dev
-    (partial dev-handler opts)
-    (br/handler router opts)))
+(defn handler [opts]
+  (if (:dev opts)
+    ;; This sneaky layer of indirection will ensure that while developing, the
+    ;; router will correctly reload when loading the namespace.
+    ;; For production, this should not be done as it causes the app to perform
+    ;; unnecessary work.
+    (fn [req] ((br/base-handler router opts) req))
+    (br/base-handler handler opts)))

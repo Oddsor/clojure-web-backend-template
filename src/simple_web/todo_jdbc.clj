@@ -1,6 +1,8 @@
-(ns simple-web.db
+(ns simple-web.todo-jdbc
   (:require [honey.sql :as h]
-            [next.jdbc :as jdbc]))
+            [next.jdbc :as jdbc]
+            [simple-web.todo-db :as todo-db]) 
+  (:import [java.time Instant]))
 
 (def migrations
   [(let [table-name :task]
@@ -42,14 +44,8 @@
 (comment
   (apply-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} migrations))
 
-(defprotocol TaskDb
-  (get-tasks [this] "Get tasks")
-  (delete-task [this id] "Delete task by id")
-  (update-task [this task] "Update task")
-  (create-task [this id title description] "Create task"))
-
-(defrecord Conny [conn]
-  TaskDb
+(deftype JdbcConnection [conn]
+  todo-db/TaskDb
   (get-tasks [this]
     (execute! conn {:select :*
                     :from :task}))
@@ -63,32 +59,21 @@
       (execute! conn {:update :task
                       :set task-fields
                       :where [:= :id id]})))
-  (create-task [this id title description]
-    (execute! conn {:insert-into :task
-                    :values [{:id id
-                              :title title
-                              :description description
-                              :status "NOT_DONE"
-                              :date (java.time.Instant/now)}]})))
+  (create-task [this title description]
+    (let [id (random-uuid)]
+      (execute! conn {:insert-into :task
+                      :values [{:id id
+                                :title title
+                                :description description
+                                :status "NOT_DONE"
+                                :date (Instant/now)}]})
+      id)))
+
+(defn make-jdbc-connection [jdbc-url]
+  (->JdbcConnection (jdbc/get-connection {:jdbcUrl jdbc-url})))
 
 (comment
-  (let [db (->Conny (jdbc/get-connection {:jdbcUrl "jdbc:sqlite:sample.db"}))]
-    (get-tasks db)
-    #_(delete-task db "288a884a-99b1-4648-bdbf-0c19c33473d8") 
-    (create-task db "Hei!" "Dette er en oppgave som må gjøres")))
-
-(comment
-  (defmacro safe-call [& args]
-    (println args)
-    (let [[body on-error-xs args] (partition-by #{:on-error} args)
-          on-error (first on-error-xs)]
-      `(try
-         ~@body
-         (catch Exception e#
-           (println ~args)
-           (if (some? ~on-error)
-             (println "Do nothing!")
-             (throw e#))))))
-
-
-  (macroexpand (safe-call (/ 1 0) :on-error)))
+  (let [db (make-jdbc-connection "jdbc:sqlite:sample.db")]
+    (println (todo-app/get-tasks db))
+    #_(delete-task db "288a884a-99b1-4648-bdbf-0c19c33473d8")
+    (todo-app/create-task db "Hei!" "Dette er en oppgave som må gjøres")))

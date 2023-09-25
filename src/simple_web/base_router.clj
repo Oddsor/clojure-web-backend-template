@@ -19,11 +19,11 @@
                   (fn [req]
                     (handler (assoc req :opts opts))))))})
 
-(defn handler
+(defn base-handler
   {:malli/schema [:function
                   [:=> [:cat :any] :any]
                   [:=> [:cat :any :any] :any]]}
-  ([router] (handler router {}))
+  ([router] (base-handler router {}))
   ([router opts]
    (r/ring-handler
     (r/router
