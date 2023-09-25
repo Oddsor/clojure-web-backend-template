@@ -1,4 +1,8 @@
-{:system {:simple-web.logging/console {}
-          :simple-web.example-app/handler {}
-          :simple-web.server/server {:port 3000
-                                     :handler :simple-web.example-app/handler}}}
+{:system {:components {:logging {:start (com.brunobonacci.mulog/start-publisher! {:type :console})
+                                 :stop (this)}
+                       :server {:start (ring.adapter.jetty/run-jetty
+                                        (clip/ref :handler)
+                                        {:port 3000
+                                         :join? false})
+                                :stop (.stop this)}
+                       :handler {:start (simple-web.example-app/handler {})}}}}
