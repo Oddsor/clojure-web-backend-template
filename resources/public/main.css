@@ -1,0 +1,72 @@
+li.htmx-swapping {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+
+ul {
+  width: 300px;
+  margin: 10px;
+  padding: 0;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid grey;
+  box-shadow: 1px 1px grey;
+  padding: 10px;
+  border-radius: 5px;
+  list-style-type: none;
+  margin: 5px;
+}
+
+li form {
+  display: inline;
+}
+
+.buttons {
+  white-space: nowrap;
+}
+
+.del {
+  width: 30px;
+  height: 24px;
+}
+
+.check {
+  width: 30px;
+  height: 24px;
+}
+
+h1 {
+  margin-bottom: 0;
+}
+.ballcontainer{
+  height: 5px;
+  width: 280px;
+  margin-bottom: 25px;
+}
+
+.ball {
+  position: relative;
+  left: 0px;
+  width: 5px;
+  height: 5px;
+  border-radius: 20px;
+  background-color: red;
+  animation: move-ball;
+  animation-duration: 5s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes move-ball {
+  from {
+    left: 0px;
+  }
+  50% {
+    left: 280px;
+  }
+  to {
+    left: 0px;
+  }
+}

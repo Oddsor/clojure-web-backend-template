@@ -1,0 +1,10 @@
+{:components {:logging {:start (com.brunobonacci.mulog/start-publisher! {:type :console})
+                        :stop (this)}
+              :server {:start (ring.adapter.jetty/run-jetty
+                               (clip/ref :handler)
+                               {:port 3000
+                                :join? false})
+                       :stop (.stop this)}
+              :db {:start (todo-app.jdbc/make-jdbc-connection "jdbc:sqlite:sample.db")}
+              :handler {:start (todo-app.core/handler {:dev true
+                                                       :db (clip/ref :db)})}}}

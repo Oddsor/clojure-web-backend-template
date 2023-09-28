@@ -1,0 +1,46 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.0-alpha3"}
+        ; Read config files with support for environment vars
+        aero/aero {:mvn/version "1.1.6"}
+        ; Data schema and validation
+        metosin/malli {:mvn/version "0.13.0"}
+        ; Web server
+        ring/ring-core {:mvn/version "1.10.0"}
+        ring/ring-jetty-adapter {:mvn/version "1.10.0"}
+        ; Server-side web requests
+        hato/hato {:mvn/version "0.9.0"}
+        ; Routing library
+        metosin/reitit-ring {:mvn/version "0.6.0"}
+        ; Various helper-middleware (content negotiation via muuntaja etc)
+        metosin/reitit-middleware {:mvn/version "0.6.0"}
+        metosin/muuntaja-form {:mvn/version "0.6.8"}
+        ; Router data validation
+        metosin/reitit-malli {:mvn/version "0.6.0"}
+        ; Logging
+        com.brunobonacci/mulog {:mvn/version "0.9.0"}
+        ; Logging - route SLF4J logs to mulog
+        ; Alternative method: https://mbezjak.github.io/posts/routing-slf4j-events-to-mulog/
+        nonseldiha/slf4j-mulog {:mvn/version "0.2.1"}
+        ; Hiccup syntax to HTML rendering
+        rum/rum {:mvn/version "0.12.11"}
+        ; HTML templating
+        selmer/selmer {:mvn/version "1.12.59"}
+        ; Authentication
+        buddy/buddy-core {:mvn/version "1.11.423"}
+        buddy/buddy-auth {:mvn/version "3.0.323"}
+        ; JDBC
+        seancorfield/next.jdbc {:mvn/version "1.2.659"}
+        ; SQL-queries as datastructures
+        com.github.seancorfield/honeysql {:mvn/version "2.4.1066"}
+        ; SQLite-connector
+        org.xerial/sqlite-jdbc {:mvn/version "3.43.0.0"}
+        juxt/clip {:mvn/version "0.28.0"}
+        ; JSON (and CSV)
+        com.cnuernber/charred {:mvn/version "1.033"}}
+ :aliases {:dev {:extra-paths ["dev"]
+                 :extra-deps {com.github.jpmonettas/flow-storm-dbg {:mvn/version "3.7.3"}}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
+                   :ns-default build}
+           :kaocha {:extra-deps {lambdaisland/kaocha {:mvn/version "1.86.1355"}
+                                 no.nav.security/mock-oauth2-server {:mvn/version "2.0.0"}}
+                    :main-opts ["-m" "kaocha.runner" "--config-file" "test/tests.edn"]}}}
