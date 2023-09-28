@@ -56,18 +56,7 @@
                         :hx-target "closest li" #_target-id
                         :hx-swap "outerHTML"}
                  (= "DONE" status) (assoc :checked "checked"))]
-       #_[:form {:action "/godkjenn-oppgave" :method "POST"
-                 :hx-boost "true" :hx-push-url "false"
-                 :hx-target target-id :hx-swap "outerHTML"}
-          (hidden-id-input id)
-          [:input {:name "status" :type "hidden" :value ({"DONE" "NOT_DONE"} status "DONE")}]
-          [:input.check {:type "submit" :value (if (= "DONE" status) "✔️" " ")}]]
-       [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" #_target-id :hx-swap "outerHTML swap:0.5s"} "❌"]
-       #_[:form {:action "/slett-oppgave" :method "POST"
-                 :hx-target target-id :hx-swap "outerHTML swap:0.5s"
-                 :hx-boost "true" :hx-push-url "false"}
-          (hidden-id-input id)
-          [:input.del {:type "submit" :value "❌"}]]]]))
+       [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" :hx-swap "outerHTML swap:0.5s"} "❌"]]]))
   ([task] (task-item task false)))
 
 (defn task-list [tasks] [:<> (map task-item tasks)])
