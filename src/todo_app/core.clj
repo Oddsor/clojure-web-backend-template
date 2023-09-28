@@ -1,7 +1,11 @@
 (ns todo-app.core
-  (:require [rum.core :as rum]
+  (:require [aero.core :refer [read-config]]
+            [clojure.java.io :as io]
+            [juxt.clip.core :as clip]
+            [rum.core :as rum]
             [simple-web.base-router :as br]
-            [todo-app.db :as db]))
+            [todo-app.db :as db]
+            [todo-app.jdbc :as jdbc]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
@@ -190,4 +194,13 @@
     ;; For production, this should not be done as it causes the app to perform
     ;; unnecessary work.
     (fn [req] ((br/base-handler router opts) req))
-    (br/base-handler handler opts)))
+    (br/base-handler router opts)))
+
+(defn config [filename]
+  (read-config (io/resource filename)))
+
+(defn -main [& _args]
+  (let [config (config "todo-config.edn")]
+    (jdbc/apply-migrations (:db-spec config) jdbc/migrations)
+    (clip/start config)
+    @(future)))
