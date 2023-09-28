@@ -40,7 +40,11 @@
      [:li {:id li-id :class "task"}
       (hidden-id-input id)
       (if edit-task?
-        [:form {:hx-boost "true" :hx-push-url "false" :hx-target target-id :hx-swap "outerHTML" :action (str "/rediger-oppgave/" id) :method "POST"}
+        [:form {:hx-boost "true"
+                :hx-push-url "false"
+                :hx-target target-id
+                :hx-swap "outerHTML"
+                :action (str "/rediger-oppgave/" id) :method "POST"}
          [:input {:type "text" :name "title" :value title}]]
         [:strong title])
       [:span.buttons
@@ -134,7 +138,7 @@
                                            title (-> req :parameters :form :title)
                                            db (-> req :opts :db)]
                                        (db/update-task db {:id id
-                                                        :title title})
+                                                           :title title})
                                        {:status 200
                                         :headers html-content-type-header
                                         :body (html (task-item (get-task! db id)))}))}}]
