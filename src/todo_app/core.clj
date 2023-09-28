@@ -1,6 +1,5 @@
 (ns todo-app.core
-  (:require [com.brunobonacci.mulog :as mu]
-            [rum.core :as rum]
+  (:require [rum.core :as rum]
             [simple-web.base-router :as br]
             [todo-app.db :as db]))
 
@@ -53,21 +52,10 @@
                         :hx-post "/godkjenn-oppgave"
                         :hx-include (str target-id " > [name='id']")
                         :name "status"
-                        :hx-target "closest li" #_target-id
+                        :hx-target "closest li"
                         :hx-swap "outerHTML"}
                  (= "DONE" status) (assoc :checked "checked"))]
-       #_[:form {:action "/godkjenn-oppgave" :method "POST"
-                 :hx-boost "true" :hx-push-url "false"
-                 :hx-target target-id :hx-swap "outerHTML"}
-          (hidden-id-input id)
-          [:input {:name "status" :type "hidden" :value ({"DONE" "NOT_DONE"} status "DONE")}]
-          [:input.check {:type "submit" :value (if (= "DONE" status) "✔️" " ")}]]
-       [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" #_target-id :hx-swap "outerHTML swap:0.5s"} "❌"]
-       #_[:form {:action "/slett-oppgave" :method "POST"
-                 :hx-target target-id :hx-swap "outerHTML swap:0.5s"
-                 :hx-boost "true" :hx-push-url "false"}
-          (hidden-id-input id)
-          [:input.del {:type "submit" :value "❌"}]]]]))
+       [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" :hx-swap "outerHTML swap:0.5s"} "❌"]]]))
   ([task] (task-item task false)))
 
 (defn task-list [tasks] [:<> (map task-item tasks)])
@@ -77,7 +65,6 @@
    [:h1 "Todlido! (" [:span#oppgave-teller (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
    [:div.ballcontainer [:div.ball]]
    [:p "Laget med " [:a {:href "https://htmx.org"} "htmx.org"]]
-   #_[:div {:hx-trigger "oppgaveliste-oppdatert" :hx-get "/" :hx-target "#oppgaveliste"}]
    lag-oppgave-skjema
    [:ul#oppgaveliste (task-list tasks)]])
 
@@ -92,6 +79,11 @@
 (defn get-tasks! [db]
   (map #(update-keys % (comp keyword name)) (db/get-tasks db)))
 
+;; HTMX-trick for updating another part of the page:
+;; Declare an event in the response header
+(def nytt-antall-event-header {"Hx-Trigger" "nytt-antall"})
+(def html-content-type-header {"Content-Type" "text/html; charset=utf-8"})
+
 (def router
   [["/" {:get {:parameters {:query root-input-spec}
                :handler
@@ -100,10 +92,11 @@
                        tasks (->> (get-tasks! db) (sort-by :date) reverse)]
                    (if (is-hx-request? req)
                      {:status 200
-                      :headers {"Content-Type" "text/html; charset=utf-8"}
+                      :headers (merge html-content-type-header
+                                      nytt-antall-event-header)
                       :body (html (task-list tasks))}
                      {:status 200
-                      :headers {"Content-Type" "text/html; charset=utf-8"}
+                      :headers html-content-type-header
                       :body (page "Todlido" (todo-body tasks))})))}}]
    ["/lag-oppgave" {:post {:parameters {:form [:map [:title :string]]}
                            :handler
@@ -113,9 +106,11 @@
                                    new-id (db/create-task db title "")]
                                (if (is-hx-request? req)
                                  {:status 200
-                                  :headers {"Hx-Trigger" "nytt-antall"
-                                            "Content-Type" "text/html; charset=utf-8"}
+                                  :headers (merge html-content-type-header
+                                                  nytt-antall-event-header)
                                   :body (html [:<>
+                                               ;; HTMX trick for updating another part of the page:
+                                               ;; Add a chunk of html that is inserted somewhere else
                                                [:div {:hx-swap-oob "afterbegin:#oppgaveliste"}
                                                 (task-item (get-task! db (str new-id)))]
                                                lag-oppgave-skjema])}
@@ -125,12 +120,11 @@
                                             :query [:map [:rediger {:optional true} :string]]}
                                :handler
                                (fn [req]
-                                 (mu/log ::hent-oppgave :req req)
                                  (let [db (-> req :opts :db)
                                        id (-> req :parameters :path :id)
                                        rediger? (-> req :parameters :query :rediger)]
                                    {:status 200
-                                    :headers {"Content-Type" "text/html; charset=utf-8"}
+                                    :headers html-content-type-header
                                     :body (html (task-item (get-task! db id) (boolean rediger?)))}))}}]
    ["/rediger-oppgave/:id" {:post {:parameters {:path [:map [:id :string]]
                                                 :form [:map [:title :string]]}
@@ -142,7 +136,7 @@
                                        (db/update-task db {:id id
                                                         :title title})
                                        {:status 200
-                                        :headers {"Content-Type" "text/html; charset=utf-8"}
+                                        :headers html-content-type-header
                                         :body (html (task-item (get-task! db id)))}))}}]
    ["/godkjenn-oppgave" {:post {:parameters {:form [:map
                                                     [:id :string]
@@ -157,8 +151,9 @@
                                                                   "NOT_DONE")})
                                     (if (is-hx-request? req)
                                       {:status 200
-                                       :headers {"Hx-Trigger" "nytt-antall"
-                                                 "Content-Type" "text/html; charset=utf-8"}
+                                       ;; Fire an event to update another part of the page
+                                       :headers (merge html-content-type-header
+                                                       nytt-antall-event-header)
                                        :body (html (task-item (get-task! db id)))}
                                       {:status 302
                                        :headers {"location" "/"}})))}}]
@@ -171,8 +166,9 @@
                                  (db/delete-task db task-id)
                                  (if (is-hx-request? req)
                                    {:status 200
-                                    :headers {"Hx-Trigger" "nytt-antall"
-                                              "Content-Type" "text/html; charset=utf-8"}
+                                    ;; Fire an event to update another part of the page
+                                    :headers (merge html-content-type-header
+                                                    nytt-antall-event-header)
                                     :body ""}
                                    {:status 302
                                     :headers {"location" "/"}})))}}]
@@ -180,7 +176,7 @@
                                (let [db (-> req :opts :db)
                                      tasks (get-tasks! db)]
                                  {:status 200
-                                  :headers {"Content-Type" "text/html; charset=utf-8"}
+                                  :headers html-content-type-header
                                   :body (str (count (filter #(= "NOT_DONE" (:status %)) tasks)))}))}]])
 
 (defn handler [opts]
