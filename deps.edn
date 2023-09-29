@@ -29,11 +29,6 @@
         buddy/buddy-core {:mvn/version "1.11.423"}
         buddy/buddy-auth {:mvn/version "3.0.323"}
         ; JDBC
-        seancorfield/next.jdbc {:mvn/version "1.2.659"}
-        ; SQL-queries as datastructures
-        com.github.seancorfield/honeysql {:mvn/version "2.4.1066"}
-        ; SQLite-connector
-        org.xerial/sqlite-jdbc {:mvn/version "3.43.0.0"}
         juxt/clip {:mvn/version "0.28.0"}
         ; JSON (and CSV)
         com.cnuernber/charred {:mvn/version "1.033"}}

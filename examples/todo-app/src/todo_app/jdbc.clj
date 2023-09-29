@@ -1,7 +1,8 @@
 (ns todo-app.jdbc
-  (:require [honey.sql :as h]
+  (:require [com.brunobonacci.mulog :as mu]
+            [honey.sql :as h]
             [next.jdbc :as jdbc]
-            [todo-app.db :as todo-db]) 
+            [todo-app.db :as todo-db])
   (:import [java.time Instant]))
 
 (def migrations
@@ -32,10 +33,10 @@
                                            :from :migrations
                                            :order-by :date})
         applied-ids (->> applied-migrations (map :migrations/id) set)]
-    (println applied-migrations)
-    (doseq [migration migrations
+    (mu/log ::migrations-found :migrations applied-ids)
+    (doseq [{migration-id :id :as migration} migrations
             :when (not (applied-ids (:id migration)))]
-      (println (format "Applying migration: %s" (:id migration)))
+      (mu/log ::apply-migration :migration-id migration-id :messsage (format "Applying migration: %s" migration-id))
       (execute! conn (:up migration))
       (execute! conn {:insert-into :migrations
                       :values [{:id (:id migration)

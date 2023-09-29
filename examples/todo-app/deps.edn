@@ -1,0 +1,11 @@
+{:paths ["src" "resources"]
+ :deps {example-app/example-app {:local/root "../../"}
+        seancorfield/next.jdbc {:mvn/version "1.2.659"}
+        ; SQL-queries as datastructures
+        com.github.seancorfield/honeysql {:mvn/version "2.4.1066"}
+        ; SQLite-connector
+        org.xerial/sqlite-jdbc {:mvn/version "3.43.0.0"}}
+ :aliases {:dev {:extra-paths ["dev"]
+                 :extra-deps {com.github.jpmonettas/flow-storm-dbg {:mvn/version "3.7.3"}}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
+                   :ns-default build}}}

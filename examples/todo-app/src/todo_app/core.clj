@@ -5,7 +5,8 @@
             [rum.core :as rum]
             [simple-web.base-router :as br]
             [todo-app.db :as db]
-            [todo-app.jdbc :as jdbc]))
+            [todo-app.jdbc :as jdbc])
+  (:gen-class))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
