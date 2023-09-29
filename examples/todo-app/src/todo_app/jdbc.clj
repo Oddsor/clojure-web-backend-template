@@ -1,28 +1,17 @@
 (ns todo-app.jdbc
-  (:require [com.brunobonacci.mulog :as mu]
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [com.brunobonacci.mulog :as mu]
             [honey.sql :as h]
             [next.jdbc :as jdbc]
             [todo-app.db :as todo-db])
-  (:import [java.time Instant]))
-
-(def migrations
-  [(let [table-name :task]
-     {:id "create-task-table"
-      :up {:create-table [table-name]
-           :with-columns
-           [[:id :uuid [:not nil]]
-            [:title :text]
-            [:description :text]
-            [:date :datetime]
-            [:status :text]
-            [[:primary-key :id]]]
-           :raw "WITHOUT rowid"}
-      :down {:drop-table table-name}})])
+  (:import [java.io File]
+           [java.time Instant]))
 
 (defn execute! [conn sql]
   (jdbc/execute! conn (h/format sql)))
 
-(defn apply-migrations [db-spec migrations]
+(defn- apply-migrations [db-spec migrations]
   (let [conn (jdbc/get-connection db-spec)
         _ (execute! conn {:create-table [:migrations :if-not-exists]
                           :with-columns
@@ -42,8 +31,18 @@
                       :values [{:id (:id migration)
                                 :date (java.time.Instant/now)}]}))))
 
+(defn perform-migrations [db-spec migration-path]
+  (let [migrations (io/resource migration-path)
+        migration-dir ^File (io/as-file migrations)]
+    (assert (.isDirectory migration-dir))
+    (apply-migrations
+     db-spec
+     (for [file (file-seq migration-dir)
+           :when (not (.isDirectory file))]
+       (edn/read-string (slurp file))))))
+
 (comment
-  (apply-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} migrations))
+  (perform-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} "migrations"))
 
 (deftype JdbcConnection [conn]
   todo-db/TaskDb

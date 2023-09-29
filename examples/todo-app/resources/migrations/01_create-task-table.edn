@@ -1,0 +1,11 @@
+{:id "create-task-table"
+ :up {:create-table [:task]
+      :with-columns
+      [[:id :uuid [:not nil]]
+       [:title :text]
+       [:description :text]
+       [:date :datetime]
+       [:status :text]
+       [[:primary-key :id]]]
+      :raw "WITHOUT rowid"}
+ :down {:drop-table :task}}

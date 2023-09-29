@@ -195,6 +195,5 @@
 
 (defn -main [& _args]
   (let [config (config "todo-config.edn")]
-    (jdbc/apply-migrations (:db-spec config) jdbc/migrations)
     (clip/start config)
     @(future)))
