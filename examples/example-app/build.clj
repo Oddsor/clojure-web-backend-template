@@ -1,6 +1,6 @@
 (ns build
   (:require [clojure.tools.build.api :as b]))
-(def app-name "simple-web")
+(def app-name "example-app")
 (def version "1.0.0")
 
 (def class-dir "target/classes")

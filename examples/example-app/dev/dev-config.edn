@@ -5,4 +5,4 @@
                                {:port 3000
                                 :join? false})
                        :stop (.stop this)}
-              :handler {:start (simple-web.example-app/handler {:dev true})}}}
+              :handler {:start (example-app.core/handler {:dev true})}}}

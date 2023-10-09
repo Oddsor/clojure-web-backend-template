@@ -1,6 +1,11 @@
 (ns simple-web.utils 
-  (:require [malli.core :as m]
+  (:require [aero.core :refer [read-config]]
+            [clojure.java.io :as io]
+            [malli.core :as m]
             [malli.error :as me]))
+
+(defn config [filename]
+  (read-config (io/resource filename)))
 
 (defn assert-schema [schema value prefixed-message]
   (when-let [explanation (m/explain schema value)]

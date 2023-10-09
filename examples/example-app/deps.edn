@@ -1,0 +1,14 @@
+{:paths ["src" "resources"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.0-alpha3"}
+        simple-web/backend {:local/root "../../"}
+        ; Hiccup syntax to HTML rendering
+        rum/rum {:mvn/version "0.12.11"}
+        ; HTML templating
+        selmer/selmer {:mvn/version "1.12.59"}}
+ :aliases {:dev {:extra-paths ["dev"]
+                 :extra-deps {com.github.jpmonettas/flow-storm-dbg {:mvn/version "3.7.5"}}}
+           :build {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
+                   :ns-default build}
+           :kaocha {:extra-deps {lambdaisland/kaocha {:mvn/version "1.87.1366"}
+                                 no.nav.security/mock-oauth2-server {:mvn/version "2.0.0"}}
+                    :main-opts ["-m" "kaocha.runner" "--config-file" "test/tests.edn"]}}}

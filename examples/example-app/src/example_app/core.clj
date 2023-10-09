@@ -1,8 +1,10 @@
-(ns simple-web.example-app
-  (:require [rum.core :as rum]
+(ns example-app.core
+  (:require [juxt.clip.core :as clip]
+            [rum.core :as rum]
             [selmer.parser :as selmer]
             [simple-web.auth :as auth]
-            [simple-web.base-router :as br]))
+            [simple-web.base-router :as br]
+            [simple-web.utils :refer [config]]))
 
 (def root-input-spec [:map
                       [:name {:optional true} :any]])
@@ -59,3 +61,7 @@
     ;; unnecessary work."
     (fn [req] ((br/base-handler router opts) req))
     (br/base-handler router opts)))
+
+(defn -main [& _args]
+  (clip/start (:system (config "config.edn")))
+  @(future))

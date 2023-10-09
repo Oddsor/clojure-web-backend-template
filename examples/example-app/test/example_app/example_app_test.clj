@@ -1,4 +1,4 @@
-(ns simple-web.example-app-test
+(ns example-app.example-app-test
   (:require [clojure.test :refer [deftest is use-fixtures]]
             [simple-web.example-app :as ea]
             [simple-web.test-utils :as utils]))

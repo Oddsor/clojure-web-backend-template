@@ -1,17 +1,16 @@
 (ns user
   (:require [flow-storm.api :as fs-api]
+            [juxt.clip.repl :as crepl]
             [malli.dev :as md]
-            [simple-web.core :as core]
-            [juxt.clip.core :as clip]))
+            [simple-web.utils :as utils]))
 
 ; Instrument and use function schemas while developing
 (md/start!)
 
-(def config (core/config "todo-dev-config.edn"))
+(crepl/set-init! #(utils/config "todo-dev-config.edn"))
 
 (comment
   (fs-api/local-connect)
 
-  (clip/require config)
-  (def sys (clip/start config))
-  (clip/stop config sys))
+  (crepl/reset)
+  (crepl/stop))
