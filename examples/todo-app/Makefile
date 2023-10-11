@@ -1,5 +1,5 @@
 .DELETE_ON_ERROR:
-test-and-build: test build
+main: build
 
 .PHONY: test
 test:

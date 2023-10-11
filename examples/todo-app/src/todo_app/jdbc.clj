@@ -1,11 +1,12 @@
 (ns todo-app.jdbc
-  (:require [clojure.edn :as edn]
+  (:require [babashka.fs :as fs]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [com.brunobonacci.mulog :as mu]
             [honey.sql :as h]
             [next.jdbc :as jdbc]
             [todo-app.db :as todo-db])
-  (:import [java.io File]
+  (:import [java.io PushbackReader]
            [java.time Instant]))
 
 (defn execute! [conn sql]
@@ -31,18 +32,16 @@
                       :values [{:id (:id migration)
                                 :date (java.time.Instant/now)}]}))))
 
-(defn perform-migrations [db-spec migration-path]
-  (let [migrations (io/resource migration-path)
-        migration-dir ^File (io/as-file migrations)]
-    (assert (.isDirectory migration-dir))
-    (apply-migrations
-     db-spec
-     (for [file (file-seq migration-dir)
-           :when (not (.isDirectory file))]
-       (edn/read-string (slurp file))))))
+(defn perform-migrations! [db-spec migration-path]
+  (apply-migrations
+   db-spec
+   (mapv (comp edn/read-string slurp fs/file)
+         (doto (or (seq (fs/glob migration-path "**.edn"))
+                   (fs/glob "resources" (str (fs/path migration-path "**.edn"))))
+           println))))
 
 (comment
-  (perform-migrations {:jdbcUrl "jdbc:sqlite:sample.db"} "migrations"))
+  (perform-migrations! {:jdbcUrl "jdbc:sqlite:sample.db"} "migrations"))
 
 (deftype JdbcConnection [conn]
   todo-db/TaskDb
