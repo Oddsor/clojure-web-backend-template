@@ -36,9 +36,8 @@
   (apply-migrations
    db-spec
    (mapv (comp edn/read-string slurp fs/file)
-         (doto (or (seq (fs/glob migration-path "**.edn"))
-                   (fs/glob "resources" (str (fs/path migration-path "**.edn"))))
-           println))))
+         (or (seq (fs/glob migration-path "**.edn"))
+             (fs/glob "resources" (str (fs/path migration-path "**.edn")))))))
 
 (comment
   (perform-migrations! {:jdbcUrl "jdbc:sqlite:sample.db"} "migrations"))
