@@ -6,6 +6,6 @@
                                 :join? false})
                        :stop (.stop this)}
               :db {:start (todo-app.jdbc/make-jdbc-connection "jdbc:sqlite:sample.db")
-                   :pre-start (todo-app.jdbc/perform-migrations "jdbc:sqlite:sample.db" "migrations")}
+                   :pre-start (todo-app.jdbc/perform-migrations! "jdbc:sqlite:sample.db" "migrations")}
               :handler {:start (todo-app.core/handler {:dev true
                                                        :db (clip/ref :db)})}}}

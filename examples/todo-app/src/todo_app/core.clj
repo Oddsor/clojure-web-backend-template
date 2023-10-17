@@ -4,8 +4,7 @@
             [juxt.clip.core :as clip]
             [rum.core :as rum]
             [simple-web.base-router :as br]
-            [todo-app.db :as db]
-            [todo-app.jdbc :as jdbc])
+            [todo-app.db :as db])
   (:gen-class))
 
 (def root-input-spec [:map
@@ -24,8 +23,7 @@
      [:meta {:charset "utf-8"}]]
     [:body {:hx-trigger "nytt-antall"
             :hx-get "/antall-oppgaver"
-            :hx-target "#oppgave-teller"}
-     xs]]))
+            :hx-target "#oppgave-teller"}]]))
 
 (defn html [xs]
   (rum/render-static-markup xs))
