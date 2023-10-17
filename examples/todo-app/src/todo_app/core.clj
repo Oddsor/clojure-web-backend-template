@@ -23,7 +23,8 @@
      [:meta {:charset "utf-8"}]]
     [:body {:hx-trigger "nytt-antall"
             :hx-get "/antall-oppgaver"
-            :hx-target "#oppgave-teller"}]]))
+            :hx-target "#oppgave-teller"}
+     xs]]))
 
 (defn html [xs]
   (rum/render-static-markup xs))
