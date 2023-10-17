@@ -33,7 +33,10 @@
   [:form {:action "/lag-oppgave" :method "POST"
           :hx-boost "true" :hx-swap "outerHTML"
           :hx-target "closest form" :hx-push-url "false"}
-   [:input {:type "text" :name "title" :placeholder "Legg til oppgave..."}]
+   [:input {:type "text"
+            :autofocus true
+            :name "title"
+            :placeholder "Legg til oppgave..."}]
    [:input {:type "submit" :value "Lag oppgave"}]])
 
 (defn task-item
@@ -44,8 +47,17 @@
      [:li {:id li-id :class "task"}
       (hidden-id-input id)
       (if edit-task?
-        [:form {:hx-boost "true" :hx-push-url "false" :hx-target target-id :hx-swap "outerHTML" :action (str "/rediger-oppgave/" id) :method "POST"}
-         [:input {:type "text" :name "title" :value title}]]
+        [:form {:hx-boost "true"
+                :hx-push-url "false"
+                :hx-target target-id
+                :hx-swap "outerHTML"
+                :action (str "/rediger-oppgave/" id)
+                :method "POST"}
+         [:input {:type "text"
+                  :name "title"
+                  :autofocus true
+                  :on-focus "this.setSelectionRange(0, this.value.length)"
+                  :value title}]]
         [:strong title])
       [:span.buttons
        (when can-edit?
