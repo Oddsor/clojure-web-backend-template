@@ -78,7 +78,7 @@
 
 (defn todo-body [tasks]
   [:body
-   [:h1 "Todlido! (" [:span#oppgave-teller (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
+   [:h1 "Todo-app (" [:span#oppgave-teller (count (filter (comp #{"NOT_DONE"} :status) tasks))] " gjenstår)"]
    [:div.ballcontainer [:div.ball]]
    [:p "Laget med " [:a {:href "https://htmx.org"} "htmx.org"]]
    lag-oppgave-skjema
@@ -112,7 +112,7 @@
                       :body (html (task-list tasks))}
                      {:status 200
                       :headers html-content-type-header
-                      :body (page "Todlido" (todo-body tasks))})))}}]
+                      :body (page "Todo-app" (todo-body tasks))})))}}]
    ["/lag-oppgave" {:post {:parameters {:form [:map [:title :string]]}
                            :handler
                            (fn [req]
