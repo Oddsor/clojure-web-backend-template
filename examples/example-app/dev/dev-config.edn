@@ -1,6 +1,6 @@
 {:components {:logging {:start (com.brunobonacci.mulog/start-publisher! {:type :console})
                         :stop (this)}
-              :server {:start (ring.adapter.jetty/run-jetty
+              :server {:start (ring.adapter.jetty9/run-jetty
                                (clip/ref :handler)
                                {:port 3000
                                 :join? false})

@@ -1,12 +1,11 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.12.0-alpha3"}
+ :deps {org.clojure/clojure {:mvn/version "1.12.0-alpha8"}
         ; Read config files with support for environment vars
         aero/aero {:mvn/version "1.1.6"}
         ; Data schema and validation
-        metosin/malli {:mvn/version "0.13.0"}
+        metosin/malli {:mvn/version "0.14.0"}
         ; Web server
-        ring/ring-core {:mvn/version "1.10.0"}
-        ring/ring-jetty-adapter {:mvn/version "1.10.0"}
+        info.sunng/ring-jetty9-adapter {:mvn/version "0.32.0"}
         ; Server-side web requests
         hato/hato {:mvn/version "0.9.0"}
         ; Routing library
@@ -25,6 +24,12 @@
         buddy/buddy-core {:mvn/version "1.11.423"}
         buddy/buddy-auth {:mvn/version "3.0.323"}
         ; JDBC
-        juxt/clip {:mvn/version "0.28.0"}
+        juxt/clip {:mvn/version "0.29.0"}
         ; JSON (and CSV)
-        com.cnuernber/charred {:mvn/version "1.033"}}}
+        com.cnuernber/charred {:mvn/version "1.034"}}
+ :aliases {:outdated {:deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
+                             io.github.nextjournal/clerk {:mvn/version "0.15.957"}}
+                      :main-opts ["-m" "antq.core"]}
+           :upgrade {:deps {com.github.liquidz/antq {:mvn/version "RELEASE"}
+                            io.github.nextjournal/clerk {:mvn/version "0.15.957"}}
+                     :main-opts ["-m" "antq.core" "--check-clojure-tools" "true" "--upgrade" "true"]}}}

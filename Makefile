@@ -14,3 +14,15 @@ build:
 	@echo "Building jar..."
 	clojure -T:build uber
 	@echo "Completed!"
+
+.PHONY: upgrade
+upgrade:
+	@echo "Updating dependencies..."
+	clojure -M:upgrade
+	@echo "Completed!"
+
+.PHONY: outdated
+outdated:
+	@echo "List outdated dependencies..."
+	clojure -M:outdated
+	@echo "Completed!"

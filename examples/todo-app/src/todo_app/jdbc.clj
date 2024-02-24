@@ -1,13 +1,11 @@
 (ns todo-app.jdbc
   (:require [babashka.fs :as fs]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]
             [com.brunobonacci.mulog :as mu]
             [honey.sql :as h]
             [next.jdbc :as jdbc]
             [todo-app.db :as todo-db])
-  (:import [java.io PushbackReader]
-           [java.time Instant]))
+  (:import [java.time Instant]))
 
 (defn execute! [conn sql]
   (jdbc/execute! conn (h/format sql)))

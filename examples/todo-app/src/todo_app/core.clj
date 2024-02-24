@@ -2,7 +2,7 @@
   (:require [aero.core :refer [read-config]]
             [clojure.java.io :as io]
             [juxt.clip.core :as clip]
-            [rum.core :as rum]
+            [dev.onionpancakes.chassis.core :as ch]
             [simple-web.base-router :as br]
             [todo-app.db :as db])
   (:gen-class))
@@ -14,7 +14,7 @@
   [:input {:name "id" :type "hidden" :value id}])
 
 (defn page [title xs]
-  (rum/render-static-markup
+  (ch/html
    [:html {:lang "en"}
     [:head
      [:title title]
@@ -27,7 +27,7 @@
      xs]]))
 
 (defn html [xs]
-  (rum/render-static-markup xs))
+  (ch/html xs))
 
 (def lag-oppgave-skjema
   [:form {:action "/lag-oppgave" :method "POST"
@@ -74,7 +74,7 @@
        [:a {:href "#" :hx-post "/slett-oppgave" :hx-include (str target-id " > [name='id']") :hx-target "closest li" :hx-swap "outerHTML swap:0.5s"} "❌"]]]))
   ([task] (task-item task false)))
 
-(defn task-list [tasks] [:<> (map task-item tasks)])
+(defn task-list [tasks] (mapv task-item tasks))
 
 (defn todo-body [tasks]
   [:body
@@ -123,8 +123,7 @@
                                  {:status 200
                                   :headers (merge html-content-type-header
                                                   nytt-antall-event-header)
-                                  :body (html [:<>
-                                               ;; HTMX trick for updating another part of the page:
+                                  :body (html [;; HTMX trick for updating another part of the page:
                                                ;; Add a chunk of html that is inserted somewhere else
                                                [:div {:hx-swap-oob "afterbegin:#oppgaveliste"}
                                                 (task-item (get-task! db (str new-id)))]

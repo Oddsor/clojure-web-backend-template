@@ -1,6 +1,6 @@
 (ns example-app.core
   (:require [juxt.clip.core :as clip]
-            [rum.core :as rum]
+            [dev.onionpancakes.chassis.core :as ch]
             [selmer.parser :as selmer]
             [simple-web.auth :as auth]
             [simple-web.base-router :as br]
@@ -50,7 +50,7 @@
            :handler (fn [req]
                       (let [hello-name (or (-> req :parameters :path :name) "world")]
                         {:status 200
-                         :body (rum/render-static-markup
+                         :body (ch/html
                                 [:h1 "Hello " hello-name "!!"])}))}}]])
 
 (defn handler [{:keys [dev] :as opts}]
