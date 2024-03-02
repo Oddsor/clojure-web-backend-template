@@ -1,5 +1,5 @@
-{:system {:components {:logging {:start (com.brunobonacci.mulog/start-publisher! {:type :console})
-                                 :stop (this)}
+{:system {:components {:logging {:start simple-web.logging/start-console-logging!
+                                 :stop simple-web.logging/stop-logging!}
                        :server {:start (ring.adapter.jetty9/run-jetty
                                         (clip/ref :handler)
                                         {:port 3000
